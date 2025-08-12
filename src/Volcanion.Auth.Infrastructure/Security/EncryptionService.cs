@@ -18,25 +18,38 @@ public class EncryptionService : IEncryptionService
     {
         using var aes = Aes.Create();
         aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32, '0')[..32]);
-        aes.IV = new byte[16]; // Simple IV for demo - use random IV in production
+
+        // Tạo IV ngẫu nhiên
+        aes.GenerateIV();
 
         using var encryptor = aes.CreateEncryptor();
         var plainBytes = Encoding.UTF8.GetBytes(plainText);
         var encryptedBytes = encryptor.TransformFinalBlock(plainBytes, 0, plainBytes.Length);
-        
-        return Convert.ToBase64String(encryptedBytes);
+
+        // Ghép IV + ciphertext => lưu chung
+        var resultBytes = new byte[aes.IV.Length + encryptedBytes.Length];
+        Buffer.BlockCopy(aes.IV, 0, resultBytes, 0, aes.IV.Length);
+        Buffer.BlockCopy(encryptedBytes, 0, resultBytes, aes.IV.Length, encryptedBytes.Length);
+
+        return Convert.ToBase64String(resultBytes);
     }
 
     public string Decrypt(string cipherText, string key)
     {
+        var fullCipher = Convert.FromBase64String(cipherText);
+
         using var aes = Aes.Create();
         aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32, '0')[..32]);
-        aes.IV = new byte[16]; // Simple IV for demo - use random IV in production
+
+        // Tách IV
+        var iv = new byte[16];
+        var cipherBytes = new byte[fullCipher.Length - iv.Length];
+        Buffer.BlockCopy(fullCipher, 0, iv, 0, iv.Length);
+        Buffer.BlockCopy(fullCipher, iv.Length, cipherBytes, 0, cipherBytes.Length);
+        aes.IV = iv;
 
         using var decryptor = aes.CreateDecryptor();
-        var cipherBytes = Convert.FromBase64String(cipherText);
         var decryptedBytes = decryptor.TransformFinalBlock(cipherBytes, 0, cipherBytes.Length);
-        
         return Encoding.UTF8.GetString(decryptedBytes);
     }
 

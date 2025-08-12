@@ -5,6 +5,9 @@ logs
 # Coverage Reports
 coveragereport/
 
+#SonarQube
+.sonarqube/
+
 # Runtime data
 pids
 *.pid

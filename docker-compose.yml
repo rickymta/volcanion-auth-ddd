@@ -14,7 +14,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
       - ASPNETCORE_HTTPS_PORT=5001
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=VolcanionAuthDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+      - ConnectionStrings__DefaultConnection=database_connection_string
       - Redis__ConnectionString=redis:6379
       - Redis__Password=redispassword
     depends_on:
