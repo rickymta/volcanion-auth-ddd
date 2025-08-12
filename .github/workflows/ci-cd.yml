@@ -121,7 +121,7 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
           docker login -u ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }} -p ${{ secrets.VOLCANION_DOCKERHUB_TOKEN }}
-          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:latest
+          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:${{ steps.meta.outputs.tags }}
           docker stop volcanion-api || true
           docker rm volcanion-api || true
           docker run -d --name volcanion-api -p 80:80 ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:latest
@@ -168,7 +168,7 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
           docker login -u ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }} -p ${{ secrets.VOLCANION_DOCKERHUB_TOKEN }}
-          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:latest
+          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:${{ steps.meta.outputs.tags }}
           docker stop volcanion-api || true
           docker rm volcanion-api || true
           docker run -d --name volcanion-api -p 80:80 ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:latest
