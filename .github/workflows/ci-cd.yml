@@ -70,7 +70,7 @@ jobs:
     env:
       DOTNET_VERSION: '8.0.x'
       REGISTRY: docker.io
-      IMAGE_NAME: rickymta/volcanion-auth-ddd
+      IMAGE_NAME: ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-auth-ddd
     permissions:
       contents: read
     steps:
@@ -121,10 +121,10 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
           docker login -u ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }} -p ${{ secrets.VOLCANION_DOCKERHUB_TOKEN }}
-          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:${{ steps.meta.outputs.tags }}
-          docker stop volcanion-api || true
-          docker rm volcanion-api || true
-          docker run -d --name volcanion-api -p 80:80 ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:latest
+          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-auth-ddd:${{ steps.meta.outputs.tags }}
+          docker stop volcanion-auth-ddd || true
+          docker rm volcanion-auth-ddd || true
+          docker run -d --name volcanion-auth-ddd -p 80:80 ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-auth-ddd:latest
   
   notify-staging:
     name: Notify Telegram After Staging
@@ -168,10 +168,10 @@ jobs:
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
           docker login -u ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }} -p ${{ secrets.VOLCANION_DOCKERHUB_TOKEN }}
-          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:${{ steps.meta.outputs.tags }}
-          docker stop volcanion-api || true
-          docker rm volcanion-api || true
-          docker run -d --name volcanion-api -p 80:80 ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-api:latest
+          docker pull ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-auth-ddd:${{ steps.meta.outputs.tags }}
+          docker stop volcanion-auth-ddd || true
+          docker rm volcanion-auth-ddd || true
+          docker run -d --name volcanion-auth-ddd -p 80:80 ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}/volcanion-auth-ddd:latest
 
   notify:
     name: Notify Telegram
