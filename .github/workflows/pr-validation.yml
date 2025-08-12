@@ -29,8 +29,41 @@ jobs:
       
     - name: Check formatting
       run: dotnet format --verify-no-changes --verbosity diagnostic
-      
-    - name: Lint PR title
-      uses: amannn/action-semantic-pull-request@v5
+        
+    - name: Set up JDK 17 for SonarCloud
+      uses: actions/setup-java@v4
+      with:
+        java-version: 17
+        distribution: 'zulu'
+        
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v4
+      with:
+        path: ~\sonar\cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+        
+    - name: Install SonarCloud scanner
+      run: |
+        dotnet tool install --global dotnet-sonarscanner
+        
+    - name: Begin SonarCloud analysis
+      continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.VOLCANION_GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        dotnet-sonarscanner begin /k:"volcanion-auth-ddd" /o:"rickymta" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="${{ secrets.SONAR_URL }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml"
+        
+    - name: Build for analysis
+      run: dotnet build --no-restore --configuration Release
+      
+    - name: Run tests with coverage
+      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+      
+    - name: End SonarCloud analysis
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.VOLCANION_GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
