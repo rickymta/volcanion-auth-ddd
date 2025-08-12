@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Volcanion Auth API
+  volcanion-auth-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: volcanion-auth-api
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080;https://+:8081
+      - ASPNETCORE_HTTPS_PORT=5001
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=VolcanionAuthDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=true;
+      - Redis__ConnectionString=redis:6379
+      - Redis__Password=redispassword
+    depends_on:
+      - sqlserver
+      - redis
+    networks:
+      - volcanion-network
+    volumes:
+      - ~/.aspnet/https:/root/.aspnet/https:ro
+      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+
+  # SQL Server 2022
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: volcanion-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - volcanion-network
+    restart: unless-stopped
+
+  # Redis 7
+  redis:
+    image: redis:7-alpine
+    container_name: volcanion-redis
+    command: redis-server --requirepass redispassword --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - volcanion-network
+    restart: unless-stopped
+
+networks:
+  volcanion-network:
+    driver: bridge
+
+volumes:
+  sqlserver_data:
+    driver: local
+  redis_data:
+    driver: local
