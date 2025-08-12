@@ -7,12 +7,44 @@ rule_files:
   # - "second_rules.yml"
 
 scrape_configs:
+  # Prometheus itself
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
+  # Volcanion Auth API
   - job_name: 'volcanion-auth-api'
     static_configs:
-      - targets: ['host.docker.internal:5000']  # Adjust port as needed
-    scrape_interval: 5s
-    metrics_path: /metrics
+      - targets: ['volcanion-auth-api:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # MySQL Exporter (if using mysql_exporter)
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['mysql:3306']
+    scrape_interval: 60s
+
+  # Redis Exporter (if using redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 30s
+
+  # Node Exporter (for system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # cAdvisor (for container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093

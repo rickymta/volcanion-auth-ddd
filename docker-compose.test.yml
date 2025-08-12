@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # MySQL for testing
+  mysql-test:
+    image: mysql:8.0
+    container_name: volcanion-mysql-test
+    environment:
+      - MYSQL_ROOT_PASSWORD=TestPassword123!
+      - MYSQL_DATABASE=volcanion_auth_test
+      - MYSQL_USER=test_user
+      - MYSQL_PASSWORD=test_password
+    ports:
+      - "3307:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pTestPassword123!"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # Redis for testing
+  redis-test:
+    image: redis:7-alpine
+    container_name: volcanion-redis-test
+    command: redis-server --requirepass testpassword
+    ports:
+      - "6380:6379"
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  test-network:
+    driver: bridge

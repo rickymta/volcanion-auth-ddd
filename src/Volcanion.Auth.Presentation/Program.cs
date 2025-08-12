@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
@@ -42,6 +43,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     var connectionString = builder.Configuration.GetConnectionString("RedisConnection");
     return ConnectionMultiplexer.Connect(connectionString ?? "localhost:6379");
 });
+
+// Add Health Checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy("API is running"));
 
 // Add JWT Authentication
 var jwtSecret = builder.Configuration["JwtSettings:Key"];

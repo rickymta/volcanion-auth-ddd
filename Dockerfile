@@ -25,10 +25,20 @@ WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-# Create non-root user
-RUN adduser --disabled-password --home /app --gecos '' appuser && chown -R appuser /app
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Create uploads directory and non-root user
+RUN mkdir -p /app/uploads && \
+    adduser --disabled-password --home /app --gecos '' appuser && \
+    chown -R appuser:appuser /app
+
 USER appuser
 
 COPY --from=publish /app/publish .
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Volcanion.Auth.Presentation.dll"]

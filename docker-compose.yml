@@ -14,33 +14,59 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080;https://+:8081
       - ASPNETCORE_HTTPS_PORT=5001
-      - ConnectionStrings__DefaultConnection=database_connection_string
-      - Redis__ConnectionString=redis:6379
-      - Redis__Password=redispassword
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=volcanion_auth;Uid=root;Pwd=root_password;
+      - ConnectionStrings__RedisConnection=redis:6379
+      - ConnectionStrings__ElasticsearchConnection=http://elasticsearch:9200
+      - JwtSettings__Key=your-super-secret-key-that-is-at-least-32-characters-long-for-production
+      - JwtSettings__Issuer=VolcanionAuth
+      - JwtSettings__Audience=VolcanionAuth
+      - JwtSettings__AccessTokenExpiryMinutes=60
+      - JwtSettings__RefreshTokenExpiryDays=7
     depends_on:
-      - sqlserver
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     networks:
       - volcanion-network
     volumes:
-      - ~/.aspnet/https:/root/.aspnet/https:ro
-      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+      - uploads_data:/app/uploads
+      - ~/.aspnet/https:/home/appuser/.aspnet/https:ro
+      - ~/.microsoft/usersecrets:/home/appuser/.microsoft/usersecrets:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # SQL Server 2022
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: volcanion-sqlserver
+  # MySQL 8.0
+  mysql:
+    image: mysql:8.0
+    container_name: volcanion-mysql
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Passw0rd
-      - MSSQL_PID=Developer
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=volcanion_auth
+      - MYSQL_USER=volcanion_user
+      - MYSQL_PASSWORD=volcanion_password
     ports:
-      - "1433:1433"
+      - "3306:3306"
     volumes:
-      - sqlserver_data:/var/opt/mssql
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: --default-authentication-plugin=mysql_native_password
     networks:
       - volcanion-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   # Redis 7
   redis:
@@ -54,13 +80,100 @@ services:
     networks:
       - volcanion-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Elasticsearch 8
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.0
+    container_name: volcanion-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.enrollment.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - volcanion-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Kibana (optional - for Elasticsearch visualization)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.10.0
+    container_name: volcanion-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - volcanion-network
+    restart: unless-stopped
+
+  # Prometheus (for monitoring)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: volcanion-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - volcanion-network
+    restart: unless-stopped
+
+  # Grafana (for monitoring dashboards)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: volcanion-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - volcanion-network
+    restart: unless-stopped
 
 networks:
   volcanion-network:
     driver: bridge
 
 volumes:
-  sqlserver_data:
+  mysql_data:
     driver: local
   redis_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  uploads_data:
     driver: local
