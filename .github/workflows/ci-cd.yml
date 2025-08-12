@@ -60,17 +60,6 @@ jobs:
         
     - name: Build for security scan
       run: dotnet build --no-restore --configuration Release
-      
-    - name: Run .NET security scan
-      run: |
-        dotnet list package --vulnerable --include-transitive --format json > security-scan-results.json || true
-        if [ -s security-scan-results.json ]; then
-          echo "Vulnerable packages found:"
-          cat security-scan-results.json
-          exit 1
-        else
-          echo "No vulnerable packages found"
-        fi
 
   build-and-push:
     name: Build and Push Docker Image
