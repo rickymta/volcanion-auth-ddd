@@ -130,6 +130,7 @@ jobs:
     name: Notify Telegram After Staging
     runs-on: ubuntu-latest
     needs: [deploy-staging]
+    environment: Volcanion
     if: always() && needs.deploy-staging.result != 'skipped'
     
     steps:
@@ -176,6 +177,7 @@ jobs:
     name: Notify Telegram
     runs-on: ubuntu-latest
     needs: [deploy-production]
+    environment: Volcanion
     if: always() && needs.deploy-production.result != 'skipped'
     
     steps:
