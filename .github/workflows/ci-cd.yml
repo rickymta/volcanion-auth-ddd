@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ master, main, develop ]
-  pull_request:
-    branches: [ master, main, develop ]
+    branches: [ master, develop ]
+  pull_request_target:
+    branches: [ master, develop ]
 
 env:
   DOTNET_VERSION: '8.0.x'
@@ -189,4 +189,3 @@ jobs:
   #            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
   #            -d text="$MESSAGE" \
   #            -d parse_mode="Markdown"
-
