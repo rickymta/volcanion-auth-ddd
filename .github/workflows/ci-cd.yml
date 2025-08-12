@@ -79,26 +79,26 @@ jobs:
       # Debug secrets
       - name: Check DockerHub secrets
         run: |
-          if [ -z "${VOLCANION_DOCKERHUB_USERNAME}" ]; then
+          if [ -z "$VOLCANION_DOCKERHUB_USERNAME" ]; then
             echo "❌ VOLCANION_DOCKERHUB_USERNAME is missing!"
           else
             echo "✅ VOLCANION_DOCKERHUB_USERNAME is set"
           fi
 
-          if [ -z "${VOLCANION_DOCKERHUB_TOKEN}" ]; then
+          if [ -z "$VOLCANION_DOCKERHUB_TOKEN" ]; then
             echo "❌ VOLCANION_DOCKERHUB_TOKEN is missing!"
           else
             echo "✅ VOLCANION_DOCKERHUB_TOKEN is set (length: ${#VOLCANION_DOCKERHUB_TOKEN})"
           fi
         env:
-          VOLCANION_DOCKERHUB_USERNAME: ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}
-          VOLCANION_DOCKERHUB_TOKEN: ${{ secrets.VOLCANION_DOCKERHUB_TOKEN }}
+          VOLCANION_DOCKERHUB_USERNAME: ${{ vars.VOLCANION_DOCKERHUB_USERNAME }}
+          VOLCANION_DOCKERHUB_TOKEN: ${{ vars.VOLCANION_DOCKERHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.VOLCANION_DOCKERHUB_USERNAME }}
-          password: ${{ secrets.VOLCANION_DOCKERHUB_TOKEN }}
+          username: ${{ vars.VOLCANION_DOCKERHUB_USERNAME }}
+          password: ${{ vars.VOLCANION_DOCKERHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
