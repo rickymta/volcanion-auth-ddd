@@ -4,11 +4,12 @@ namespace Volcanion.Auth.Domain.ValueObjects;
 
 public class Password : ValueObject
 {
-    public string HashedValue { get; private set; }
+    public string Value { get; private set; } // Expose Value property
+    public string HashedValue => Value; // Alias for backward compatibility
 
     private Password(string hashedValue)
     {
-        HashedValue = hashedValue;
+        Value = hashedValue;
     }
 
     public static Password CreateFromHash(string hashedPassword)
@@ -17,6 +18,23 @@ public class Password : ValueObject
             throw new ArgumentException("Hashed password cannot be null or empty", nameof(hashedPassword));
 
         return new Password(hashedPassword);
+    }
+
+    public static SimpleResult<Password> Create(string plainTextPassword)
+    {
+        if (string.IsNullOrWhiteSpace(plainTextPassword))
+            return SimpleResult<Password>.Failure("Password cannot be null or empty");
+
+        try
+        {
+            ValidatePasswordStrength(plainTextPassword);
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(plainTextPassword);
+            return SimpleResult<Password>.Success(new Password(hashedPassword));
+        }
+        catch (ArgumentException ex)
+        {
+            return SimpleResult<Password>.Failure(ex.Message);
+        }
     }
 
     public static Password CreateFromPlainText(string plainTextPassword)

@@ -25,6 +25,19 @@ public class PhoneNumber : ValueObject
         return new PhoneNumber(phoneNumber);
     }
 
+    public static SimpleResult<PhoneNumber> CreateResult(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return SimpleResult<PhoneNumber>.Failure("Phone number cannot be null or empty");
+
+        phoneNumber = phoneNumber.Trim();
+
+        if (!IsValidPhoneNumber(phoneNumber))
+            return SimpleResult<PhoneNumber>.Failure("Invalid phone number format");
+
+        return SimpleResult<PhoneNumber>.Success(new PhoneNumber(phoneNumber));
+    }
+
     private static bool IsValidPhoneNumber(string phoneNumber)
     {
         // Support international phone number formats

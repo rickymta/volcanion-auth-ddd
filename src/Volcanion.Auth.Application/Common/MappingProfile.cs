@@ -17,6 +17,11 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src => 
                 src.UserRoles.SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission.Name))));
 
+        CreateMap<Role, RoleDto>()
+            .ForMember(dest => dest.Permissions, opt => opt.MapFrom(src => src.RolePermissions.Select(rp => rp.Permission)));
+
+        CreateMap<Permission, PermissionDto>();
+
         CreateMap<Role, string>()
             .ConvertUsing(src => src.Name);
 

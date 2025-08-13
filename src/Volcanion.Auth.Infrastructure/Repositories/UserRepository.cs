@@ -25,6 +25,16 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 
+    public async Task<User?> GetByIdWithRolesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                        .ThenInclude(rp => rp.Permission)
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    }
+
     public async Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
@@ -124,5 +134,76 @@ public class UserRepository : IUserRepository
     public async Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Users.CountAsync(cancellationToken);
+    }
+
+    public void Add(User user)
+    {
+        _context.Users.Add(user);
+    }
+
+    public void Update(User user)
+    {
+        _context.Users.Update(user);
+    }
+
+    public async Task<(List<User> users, int totalCount)> GetPagedUsersAsync(
+        int page, 
+        int pageSize, 
+        string? searchTerm = null,
+        string? role = null,
+        bool? isActive = null,
+        string? sortBy = null,
+        string? sortDirection = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.Users
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .AsQueryable();
+
+        // Apply filters
+        if (!string.IsNullOrEmpty(searchTerm))
+        {
+            query = query.Where(u => 
+                u.FirstName.Contains(searchTerm) ||
+                u.LastName.Contains(searchTerm) ||
+                u.Email.Value.Contains(searchTerm));
+        }
+
+        if (!string.IsNullOrEmpty(role))
+        {
+            query = query.Where(u => u.UserRoles.Any(ur => ur.Role.Name == role));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        // Apply sorting
+        query = sortBy?.ToLower() switch
+        {
+            "firstname" => sortDirection?.ToLower() == "desc" 
+                ? query.OrderByDescending(u => u.FirstName)
+                : query.OrderBy(u => u.FirstName),
+            "lastname" => sortDirection?.ToLower() == "desc"
+                ? query.OrderByDescending(u => u.LastName)
+                : query.OrderBy(u => u.LastName),
+            "email" => sortDirection?.ToLower() == "desc"
+                ? query.OrderByDescending(u => u.Email.Value)
+                : query.OrderBy(u => u.Email.Value),
+            "createdat" => sortDirection?.ToLower() == "desc"
+                ? query.OrderByDescending(u => u.CreatedAt)
+                : query.OrderBy(u => u.CreatedAt),
+            _ => query.OrderByDescending(u => u.CreatedAt)
+        };
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var users = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (users, totalCount);
     }
 }
