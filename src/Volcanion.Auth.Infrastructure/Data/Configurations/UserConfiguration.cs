@@ -53,6 +53,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
                 .HasColumnName("PasswordHash")
                 .HasMaxLength(255)
                 .IsRequired();
+                
+            password.Ignore(p => p.Value);
         });
 
         builder.Property(u => u.AvatarUrl)

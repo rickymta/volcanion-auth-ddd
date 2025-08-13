@@ -9,9 +9,20 @@ public interface IPermissionRepository
     Task<IEnumerable<Permission>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<IEnumerable<Permission>> GetByRoleIdAsync(Guid roleId, CancellationToken cancellationToken = default);
     Task<IEnumerable<Permission>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<(List<Permission> permissions, int totalCount)> GetPagedPermissionsAsync(
+        int page, 
+        int pageSize, 
+        string? searchTerm = null,
+        string? resource = null,
+        string? action = null,
+        string? sortBy = null,
+        string? sortDirection = null,
+        CancellationToken cancellationToken = default);
     Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default);
     Task AddAsync(Permission permission, CancellationToken cancellationToken = default);
+    void Add(Permission permission);
     Task UpdateAsync(Permission permission, CancellationToken cancellationToken = default);
+    void Update(Permission permission);
     Task DeleteAsync(Permission permission, CancellationToken cancellationToken = default);
 }

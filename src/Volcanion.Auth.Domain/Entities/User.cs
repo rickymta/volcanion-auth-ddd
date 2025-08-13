@@ -33,6 +33,40 @@ public class User : BaseEntity
         IsPhoneVerified = false;
     }
 
+    public static User Create(Email email, Password password, string firstName, string lastName)
+    {
+        return new User(firstName, lastName, email, password);
+    }
+
+    public void UpdateProfile(string firstName, string lastName)
+    {
+        FirstName = firstName ?? throw new ArgumentNullException(nameof(firstName));
+        LastName = lastName ?? throw new ArgumentNullException(nameof(lastName));
+        MarkAsUpdated();
+    }
+
+    public void UpdatePhoneNumber(PhoneNumber phoneNumber)
+    {
+        PhoneNumber = phoneNumber;
+        MarkAsUpdated();
+    }
+
+    public void ChangePassword(Password newPassword)
+    {
+        Password = newPassword ?? throw new ArgumentNullException(nameof(newPassword));
+        MarkAsUpdated();
+    }
+
+    public void AssignRoles(IEnumerable<Role> roles)
+    {
+        UserRoles.Clear();
+        foreach (var role in roles)
+        {
+            UserRoles.Add(new UserRole(Id, role.Id));
+        }
+        MarkAsUpdated();
+    }
+
     public void UpdatePersonalInfo(string firstName, string lastName, PhoneNumber? phoneNumber = null)
     {
         FirstName = firstName ?? throw new ArgumentNullException(nameof(firstName));
